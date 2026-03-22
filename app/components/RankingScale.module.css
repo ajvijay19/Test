@@ -1,0 +1,154 @@
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.photo {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.scale {
+  margin-top: 1.75rem;
+}
+
+.scaleLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.track {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.tick {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.tickMark {
+  width: 2px;
+  height: 8px;
+  background: #ccc;
+  border-radius: 1px;
+  transition: background 0.15s ease, height 0.15s ease;
+}
+
+.tickActive .tickMark {
+  background: #111;
+  height: 12px;
+}
+
+.num {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #444;
+  width: 100%;
+  max-width: 2.25rem;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.num:hover {
+  border-color: #999;
+  transform: scale(1.05);
+}
+
+.num:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.numActive {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.sliderLabel {
+  font-size: 0.75rem;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    #111 0%,
+    #111 calc((var(--rank, 5) - 1) / 9 * 100%),
+    #e5e5e5 calc((var(--rank, 5) - 1) / 9 * 100%),
+    #e5e5e5 100%
+  );
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #111;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+}
+
+.slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #111;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+}
+
+.readout {
+  text-align: center;
+  margin: 1.25rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111;
+}
