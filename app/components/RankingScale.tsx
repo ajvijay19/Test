@@ -1,12 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import {
-  appendSubmission,
-  loadSubmissions,
-  type RankingSubmission,
-} from "../lib/rankingStorage";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import type { DbRating } from "@/app/lib/ratings";
 import styles from "./RankingScale.module.css";
 
 const IMAGE_SRC = "/camera-rating.png";
@@ -27,15 +23,42 @@ function formatSubmittedAt(iso: string): string {
 
 function RankingScale() {
   const [rank, setRank] = useState(5);
-  const [submissions, setSubmissions] = useState<RankingSubmission[]>([]);
+  const [rows, setRows] = useState<DbRating[]>([]);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(
+    "loading",
+  );
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  useEffect(() => {
-    setSubmissions(loadSubmissions());
+  const refreshRatings = useCallback(async () => {
+    setLoadState("loading");
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/ratings", { cache: "no-store" });
+      const json = (await res.json()) as {
+        ratings?: DbRating[];
+        error?: string;
+      };
+      if (!res.ok) {
+        setLoadState("error");
+        setLoadError(json.error ?? `Request failed (${res.status})`);
+        return;
+      }
+      setRows(json.ratings ?? []);
+      setLoadState("idle");
+    } catch (e) {
+      setLoadState("error");
+      setLoadError(e instanceof Error ? e.message : "Failed to load ratings");
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshRatings();
+  }, [refreshRatings]);
 
   const sliderStyle = useMemo(
     () => ({ "--rank": rank } as CSSProperties & { "--rank": number }),
@@ -106,24 +129,47 @@ function RankingScale() {
         <button
           type="button"
           className={styles.submit}
-          onClick={() => {
+          disabled={submitting}
+          onClick={async () => {
+            setStatus(null);
+            setSubmitting(true);
             try {
-              const next = appendSubmission(rank);
-              setSubmissions(next);
+              const res = await fetch("/api/ratings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rating_value: rank }),
+              });
+              const json = (await res.json()) as {
+                rating?: DbRating;
+                error?: string;
+              };
+              if (!res.ok) {
+                setStatus({
+                  type: "error",
+                  message: json.error ?? `Save failed (${res.status})`,
+                });
+                return;
+              }
+              if (json.rating) {
+                setRows((prev) => [json.rating as DbRating, ...prev]);
+              }
               setStatus({
                 type: "success",
                 message: `Saved rating ${rank} / 10`,
               });
               window.setTimeout(() => setStatus(null), 3500);
-            } catch {
+            } catch (e) {
               setStatus({
                 type: "error",
-                message: "Could not save. Check browser storage settings.",
+                message:
+                  e instanceof Error ? e.message : "Could not save rating",
               });
+            } finally {
+              setSubmitting(false);
             }
           }}
         >
-          Submit rating
+          {submitting ? "Saving…" : "Submit rating"}
         </button>
         <p
           className={`${styles.status} ${status?.type === "error" ? styles.statusError : ""}`}
@@ -136,23 +182,37 @@ function RankingScale() {
 
       <section className={styles.history} aria-labelledby="saved-heading">
         <h2 id="saved-heading" className={styles.historyTitle}>
-          Saved on this device
+          Ratings from the database
         </h2>
         <p className={styles.historyHint}>
-          Submissions are stored in your browser (localStorage). They stay until
-          you clear site data.
+          List load and submit go through this app&apos;s API, which reads and
+          writes your Supabase <code className={styles.code}>public.ratings</code>{" "}
+          table (newest first). Nothing is stored only in the browser.
         </p>
-        {submissions.length === 0 ? (
-          <p className={styles.historyHint}>No submissions yet.</p>
+        {loadState === "loading" && rows.length === 0 ? (
+          <p className={styles.historyHint}>Loading…</p>
+        ) : loadState === "error" ? (
+          <p className={styles.statusError}>
+            {loadError ?? "Could not load ratings."}{" "}
+            <button
+              type="button"
+              className={styles.linkButton}
+              onClick={() => void refreshRatings()}
+            >
+              Retry
+            </button>
+          </p>
+        ) : rows.length === 0 ? (
+          <p className={styles.historyHint}>No rows yet. Submit a rating.</p>
         ) : (
           <ul className={styles.historyList}>
-            {submissions.map((s) => (
-              <li key={s.id} className={styles.historyItem}>
+            {rows.map((r) => (
+              <li key={String(r.id)} className={styles.historyItem}>
                 <span className={styles.historyRank}>
-                  {s.rank} / 10
+                  {r.rating_value} / 10
                 </span>
                 <span className={styles.historyTime}>
-                  {formatSubmittedAt(s.submittedAt)}
+                  {formatSubmittedAt(r.created_at)}
                 </span>
               </li>
             ))}
