@@ -1,4 +1,4 @@
-import { RankingScale } from "./components/RankingScale";
+import RankingScale from "./components/RankingScale";
 
 export default function Home() {
   return <RankingScale />;
